@@ -36,7 +36,6 @@ decl_module! {
             let token_id = Self::token_id();
             let next_token_id = token_id.checked_add(1).ok_or("overflow in calculating next token id")?;
 
-
             let token = Erc20Token {
                 name,
                 ticker,
@@ -58,6 +57,7 @@ decl_module! {
 
         #[weight=0]
         pub fn transfer_from(_origin, token_id: u32, from: T::AccountId, to: T::AccountId, value: T::TokenBalance) -> DispatchResult {
+            ensure!(<Allowance<T>>::contains_key((token_id, from.clone(), to.clone())), "Allowance does not exist.");
             let allowance = Self::allowance((token_id, from.clone(), to.clone()));
             ensure!(allowance >= value, "Not enough allowance.");
 
@@ -72,6 +72,7 @@ decl_module! {
         #[weight=0]
         fn approve(_origin, token_id: u32, spender: T::AccountId,value: T::TokenBalance) -> DispatchResult{
             let sender = ensure_signed(_origin)?;
+            ensure!(<Balanceof<T>>::contains_key((token_id, sender.clone())), "Account does not own this token");
             let allowance = Self::allowance((token_id, sender.clone(),spender.clone()));
             let updated_allowance= allowance.checked_add(&value).ok_or(Error::<T>::Storageoverflow)?;
             <Allowance<T>>::insert((token_id, sender.clone(),spender.clone()),updated_allowance);
